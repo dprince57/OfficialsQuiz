@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Quiz Preferences{% endblock title %}
+
+{% block content %}
+<div class="quiz">
+    <h1>Choose Your Quiz Settings</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+       <button type="submit" class="button">Submit</button>
+    </form>
+</div>
+{% endblock content %}

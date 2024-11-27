@@ -1,0 +1,25 @@
+<!-- quiz_app/templates/home.html -->
+{% extends 'base.html' %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<h1>Welcome, {{ user.username }}</h1>
+<h2>Your Quiz Progress</h2>
+
+{% if incorrect_answers %}
+    <h3>Incorrect Answers:</h3>
+    <ul>
+        {% for answer in incorrect_answers %}
+            <li>
+                <strong>Question:</strong> {{ answer.question }}<br>
+                <strong>Your Answer:</strong> {{ answer.your_answer }}<br>
+                <strong>Correct Answer:</strong> {{ answer.correct_answer }}<br>
+                <strong>Rule Reference:</strong> {{ answer.rule_reference }}
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>Great work! You have no incorrect answers recorded yet.</p>
+{% endif %}
+{% endblock %}

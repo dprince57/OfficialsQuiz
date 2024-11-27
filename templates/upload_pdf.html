@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Upload PDF{% endblock title %}
+
+{% block content %}
+<div class="quiz">
+    <h1>Upload Quiz PDF</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="button">Upload</button>
+    </form>
+</div>
+{% endblock content %}
