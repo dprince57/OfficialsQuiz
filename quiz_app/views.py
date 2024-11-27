@@ -10,7 +10,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import QuizPreferenceForm, QuizPDFForm
-from .models import Question, Answer, UserAnswer
+from .models import Quiz, Question, Answer, Conference, UserAnswer
+from .forms import QuizForm, QuestionForm, AnswerForm
 
 
 def quiz_preferences_view(request):
@@ -114,18 +115,26 @@ def extract_questions_and_answers(text):
 @login_required
 def home(request):
     user_answers = UserAnswer.objects.filter(user=request.user)
-    incorrect_answers = []
+    results = []
 
-    for user_answer in user_answers.filter(is_correct=False):
-        correct_answer = user_answer.question.answers.get(is_correct=True)  # Get the correct answer
-        incorrect_answers.append({
-            'question': user_answer.question.text,
-            'your_answer': user_answer.answer.text,
-            'correct_answer': correct_answer.text,
-            'rule_reference': correct_answer.rule_reference,
-        })
+    for user_answer in user_answers:
+        try:
+            correct_answer = user_answer.question.answers.get(is_correct=True)  # Get the correct answer
+            results.append({
+                "question": user_answer.question.text,
+                "user_answer": user_answer.answer.text,
+                "correct_answer": correct_answer.text,
+                "is_correct": user_answer.is_correct
+            })
+        except Answer.DoesNotExist:
+            results.append({
+                "question": user_answer.question.text,
+                "user_answer": user_answer.answer.text,
+                "correct_answer": "No correct answer exists",
+                "is_correct": user_answer.is_correct
+            })
 
-    return render(request, 'home.html', {'incorrect_answers': incorrect_answers})
+    return render(request, 'home.html', {"results": results})
 
 
 @login_required
@@ -250,11 +259,6 @@ def submit_quiz(request):
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=400)
 
-
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from .models import Quiz, Question, Answer, Conference
-from .forms import QuizForm, QuestionForm, AnswerForm
 
 @login_required
 def create_quiz(request):
