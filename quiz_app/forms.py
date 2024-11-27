@@ -1,13 +1,6 @@
 # quiz_app/forms.py
 from django import forms
-from .models import Answer, UploadedPDF
-from .models import QuizPDF
-
-
-class PDFUploadForm(forms.ModelForm):
-    class Meta:
-        model = UploadedPDF
-        fields = ['file']
+from .models import Answer, QuizPDF
 
 
 class QuizPreferenceForm(forms.Form):
@@ -37,3 +30,31 @@ class QuizPDFForm(forms.ModelForm):
     class Meta:
         model = QuizPDF
         fields = ['file']
+
+
+from django import forms
+from .models import Quiz, Question, Answer, Conference
+
+
+class QuizForm(forms.ModelForm):
+    class Meta:
+        model = Quiz
+        fields = ['title', 'publish_time', 'conference']
+
+
+class QuestionForm(forms.ModelForm):
+    class Meta:
+        model = Question
+        fields = ['text']
+
+
+class AnswerForm(forms.ModelForm):
+    class Meta:
+        model = Answer
+        fields = ['text', 'is_correct']
+
+
+class ConferenceForm(forms.ModelForm):
+    class Meta:
+        model = Conference
+        fields = ['name', 'logo']

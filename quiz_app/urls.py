@@ -4,6 +4,10 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path('create_quiz/', views.create_quiz, name='create_quiz'),
+    path('edit_quiz/<int:quiz_id>/', views.edit_quiz, name='edit_quiz'),
+    path('add_answers/<int:question_id>/', views.add_answers, name='add_answers'),
+    path('stats/<int:conference_id>/', views.stats_view, name='stats'),
     path('quiz/submit/', views.submit_quiz, name='submit_quiz'),
     path('quiz/preferences/', views.quiz_preferences_view, name='quiz_preferences'),
     path('upload_pdf/', views.upload_pdf, name='upload_pdf'),

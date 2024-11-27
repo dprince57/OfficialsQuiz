@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Quiz Results{% endblock title %}
+
+{% block content %}
+<div class="quiz-results">
+    <h2>Your Score: {{ score }} / {{ total }}</h2>
+
+    {% if wrong_questions %}
+    <h3>Questions You Got Wrong:</h3>
+    <ul>
+        {% for question in wrong_questions %}
+        <li>{{ question.text }}</li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>Great job! You answered all questions correctly!</p>
+    {% endif %}
+
+    <a href="{% url 'quiz' %}" class="btn btn-primary">Try Again</a>
+</div>
+{% endblock content %}

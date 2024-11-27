@@ -1,46 +1,23 @@
 {% extends "base.html" %}
 
-{% block title %}Take Quiz{% endblock title %}
-
-{% block extra_head %}
-<script>
-    let timer = {{ timer_duration }} * 60; // Timer duration in seconds
-    function updateTimer() {
-        const minutes = Math.floor(timer / 60);
-        const seconds = timer % 60;
-        document.getElementById("timer").textContent = `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
-        if (timer > 0) {
-            timer--;
-        } else {
-            alert("Time's up!");
-            document.getElementById("quiz-form").submit();
-        }
-    }
-    document.addEventListener("DOMContentLoaded", () => setInterval(updateTimer, 1000));
-</script>
-{% endblock extra_head %}
+{% block title %}Quiz{% endblock title %}
 
 {% block content %}
-    <!-- Timer -->
-    <div id="timer" style="font-size: 1.2em; font-weight: bold; color: #00bcd4;">{{ timer_duration }}:00</div>
+<div class="quiz">
+    <h2>Question {{ current_index }} of {{ total_questions }}</h2>
+    <p>{{ question.text }}</p>
 
-    <!-- Quiz -->
-    <div class="quiz">
-        <h1>Quiz</h1>
-        <form id="quiz-form" method="post" action="{% url 'submit_quiz' %}">
-            {% csrf_token %}
-            {% for question in questions %}
-                <div class="question">
-                    <p><strong>{{ forloop.counter }}. {{ question.text }}</strong></p>
-                    {% for answer in question.answers.all %}
-                        <div class="answer">
-                            <input type="radio" id="answer_{{ answer.id }}" name="question_{{ question.id }}" value="{{ answer.id }}">
-                            <label for="answer_{{ answer.id }}">{{ answer.text }}</label>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endfor %}
-            <button type="submit" class="button">Submit</button>
-        </form>
-    </div>
+    <form method="post">
+        {% csrf_token %}
+        {% for answer in answers %}
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="answer" id="answer{{ answer.id }}" value="{{ answer.id }}">
+            <label class="form-check-label" for="answer{{ answer.id }}">
+                {{ answer.text }}
+            </label>
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary mt-3">Next</button>
+    </form>
+</div>
 {% endblock content %}

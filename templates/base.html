@@ -4,32 +4,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}NCAA Quiz{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'quiz_app/styles.css' %}">
-    {% block extra_head %}{% endblock extra_head %}
+    <title>{% block title %}Quiz App{% endblock title %}</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
 <body>
     <!-- Navbar -->
-    <div class="navbar">
-        <div class="nav-links">
-            <a href="/home">Home</a>
-            <a href="/quiz">Quiz</a>
-            <a href="/rules">Rules</a>
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">Quiz App</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/quiz">Quiz</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/upload_pdf">Upload PDF</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Hi, {{ user.username }}</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">Logout</a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login">Login</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
         </div>
-        <div class="user-info">
-            Logged in as {{ user.username }}
-        </div>
-    </div>
+    </nav>
 
-    <!-- Content -->
+    <!-- Main Content -->
     <div class="container">
         {% block content %}
+        <!-- Content goes here -->
         {% endblock content %}
     </div>
 
     <!-- Footer -->
     <footer>
-        <p>&copy; 2024 NCAA Quiz Platform</p>
+        &copy; 2024 Quiz App | All rights reserved.
     </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

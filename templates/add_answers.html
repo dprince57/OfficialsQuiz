@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Add Answers{% endblock title %}
+
+{% block content %}
+<h1>Add Answers to: {{ question.text }}</h1>
+<form method="post">
+    {% csrf_token %}
+    {{ answer_form.as_p }}
+    <button type="submit" class="btn btn-primary">Add Answer</button>
+</form>
+
+<h2>Current Answers</h2>
+<ul>
+    {% for answer in answers %}
+    <li>{{ answer.text }} ({{ "Correct" if answer.is_correct else "Incorrect" }})</li>
+    {% endfor %}
+</ul>
+{% endblock content %}

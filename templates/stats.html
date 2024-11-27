@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Quiz Stats{% endblock title %}
+
+{% block content %}
+<h1>Stats for {{ conference.name }}</h1>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Quiz</th>
+            <th>Average Score</th>
+            <th>Most Missed Question</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for quiz in quizzes %}
+        <tr>
+            <td>{{ quiz.title }}</td>
+            <td>{{ quiz.user_stats.aggregate(avg=Avg('score')).avg }}</td>
+            <td>
+                {% with most_missed=quiz.questions.annotate(wrong_count=Count('answers__useranswer', filter=Q(answers__is_correct=False))).order_by('-wrong_count').first %}
+                {{ most_missed.text if most_missed }}
+                {% endwith %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock content %}

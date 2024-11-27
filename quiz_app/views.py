@@ -9,7 +9,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .forms import QuizPreferenceForm, PDFUploadForm
+from .forms import QuizPreferenceForm, QuizPDFForm
 from .models import Question, Answer, UserAnswer
 
 
@@ -25,31 +25,38 @@ def quiz_preferences_view(request):
 @login_required
 def upload_pdf(request):
     if request.method == "POST":
-        form = PDFUploadForm(request.POST, request.FILES)
+        form = QuizPDFForm(request.POST, request.FILES)
         if form.is_valid():
-            uploaded_pdf = form.save()  # Save the uploaded file
-            parse_and_upload_pdf(uploaded_pdf.file.path)  # Call the parser
-            return redirect('upload_pdf')  # Redirect to the same page after parsing
+            # Save the uploaded PDF
+            quiz_pdf = form.save()
+            file_path = quiz_pdf.file.path
+
+            # Parse and save questions/answers
+            parse_and_save_pdf(file_path)
+
+            return redirect('quiz')  # Adjust redirect to your desired page
 
     else:
-        form = PDFUploadForm()
+        form = QuizPDFForm()
 
     return render(request, 'upload_pdf.html', {'form': form})
 
 
-def parse_and_upload_pdf(file_path):
+def parse_and_save_pdf(file_path):
+    """
+    Parse the PDF and save extracted questions and answers into the database.
+    """
+    import pdfplumber
+
     with pdfplumber.open(file_path) as pdf:
         for page in pdf.pages:
             text = page.extract_text()
             if not text:
-                print(f"Page {page.page_number} has no readable text!")
                 continue
 
             questions = extract_questions_and_answers(text)
-
             for question_text, answers in questions:
                 question = Question.objects.create(text=question_text)
-
                 for answer in answers:
                     Answer.objects.create(
                         question=question,
@@ -60,43 +67,47 @@ def parse_and_upload_pdf(file_path):
 
 
 def extract_questions_and_answers(text):
+    """
+    Extract questions and answers from the text.
+    """
+    import re
+
     lines = text.split("\n")
     questions = []
     current_question = None
     current_answers = []
+    reading_answers = False
 
     for i, line in enumerate(lines):
-        question_match = re.match(r"(Q\d+)\s(.*)", line)
+        line = line.strip()
+
+        # Detect questions starting with "Q#"
+        question_match = re.match(r"^(Q\d+)\s(.*)", line)
         if question_match:
             if current_question and current_answers:
                 questions.append((current_question.strip(), current_answers))
                 current_answers = []
 
             current_question = question_match.group(2).strip()
+            reading_answers = False
+            continue
 
-        elif re.match(r"^\s*o\s", line):
-            answer_text = collect_full_answer(lines, i)
-            is_correct = "__" in answer_text
-            cleaned_text = answer_text.replace("__", "").strip()
-            current_answers.append({"text": cleaned_text, "is_correct": is_correct})
+        # Detect answers prefixed by "o"
+        if line == "o":
+            reading_answers = True
+            continue
 
-        elif current_question and not re.match(r"^\s*o\s", line) and not re.match(r"(Q\d+)\s", line):
-            current_question += f" {line.strip()}"
+        if reading_answers:
+            current_answers.append({"text": line, "is_correct": "__" in line})
+            continue
+
+        if current_question:
+            current_question += f" {line}"
 
     if current_question and current_answers:
         questions.append((current_question.strip(), current_answers))
 
     return questions
-
-
-def collect_full_answer(lines, start_index):
-    answer = lines[start_index].lstrip("o").strip()
-    for i in range(start_index + 1, len(lines)):
-        if not re.match(r"^\s*o\s", lines[i]) and not re.match(r"(Q\d+)\s", lines[i]):
-            answer += f" {lines[i].strip()}"
-        else:
-            break
-    return answer
 
 
 
@@ -119,22 +130,71 @@ def home(request):
 
 @login_required
 def quiz_view(request):
-    form = QuizPreferenceForm(request.POST or None)
-    if form.is_valid():
-        # Get user preferences
-        num_questions = int(form.cleaned_data['num_questions'])
-        timer_duration = int(form.cleaned_data['timer'])
+    # Initialize quiz session data
+    if 'quiz_data' not in request.session:
+        num_questions = int(request.GET.get('num_questions', 10))  # Default: 10 questions
+        questions = list(Question.objects.all())
+        random.shuffle(questions)  # Shuffle the questions
+        selected_questions = questions[:num_questions]
 
-        # Fetch the requested number of random questions
-        questions = Question.objects.order_by("?")[:num_questions]
+        request.session['quiz_data'] = {
+            'questions': [q.id for q in selected_questions],
+            'current_index': 0,
+            'score': 0,
+            'wrong_questions': []
+        }
 
-        return render(request, 'quiz.html', {
-            'questions': questions,
-            'timer_duration': timer_duration,
+    quiz_data = request.session['quiz_data']
+    current_index = quiz_data['current_index']
+
+    # Check if quiz is complete
+    if current_index >= len(quiz_data['questions']):
+        wrong_questions = Question.objects.filter(id__in=quiz_data['wrong_questions'])
+        score = quiz_data['score']
+
+        # Clear quiz session data
+        del request.session['quiz_data']
+
+        return render(request, 'quiz_results.html', {
+            'score': score,
+            'total': len(quiz_data['questions']),
+            'wrong_questions': wrong_questions
         })
 
-    # Default view with form
-    return render(request, 'quiz_preferences.html', {'form': form})
+    # Get the current question
+    question_id = quiz_data['questions'][current_index]
+    question = Question.objects.get(id=question_id)
+    answers = question.answers.all()
+
+    # Handle form submission
+    if request.method == 'POST':
+        selected_answer_id = int(request.POST.get('answer'))
+        selected_answer = Answer.objects.get(id=selected_answer_id)
+
+        if selected_answer.is_correct:
+            quiz_data['score'] += 1
+        else:
+            quiz_data['wrong_questions'].append(question.id)
+
+        # Save the user's answer
+        UserAnswer.objects.create(
+            user=request.user,
+            question=question,
+            answer=selected_answer,
+            is_correct=selected_answer.is_correct
+        )
+
+        # Move to the next question
+        quiz_data['current_index'] += 1
+        request.session['quiz_data'] = quiz_data  # Save progress
+        return redirect('quiz')
+
+    return render(request, 'quiz.html', {
+        'question': question,
+        'answers': answers,
+        'current_index': current_index + 1,
+        'total_questions': len(quiz_data['questions'])
+    })
 
 
 @login_required
@@ -190,3 +250,80 @@ def submit_quiz(request):
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=400)
 
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from .models import Quiz, Question, Answer, Conference
+from .forms import QuizForm, QuestionForm, AnswerForm
+
+@login_required
+def create_quiz(request):
+    if not request.user.admin_conferences.exists():
+        return render(request, 'error.html', {'message': 'You are not an admin of any conference.'})
+
+    if request.method == 'POST':
+        form = QuizForm(request.POST)
+        if form.is_valid():
+            quiz = form.save(commit=False)
+            quiz.creator = request.user
+            quiz.save()
+            return redirect('edit_quiz', quiz_id=quiz.id)
+    else:
+        form = QuizForm()
+
+    return render(request, 'create_quiz.html', {'form': form})
+
+
+@login_required
+def edit_quiz(request, quiz_id):
+    quiz = get_object_or_404(Quiz, id=quiz_id, creator=request.user)
+    questions = quiz.questions.all()
+
+    if request.method == 'POST':
+        question_form = QuestionForm(request.POST)
+        if question_form.is_valid():
+            question = question_form.save(commit=False)
+            question.quiz = quiz
+            question.save()
+            return redirect('edit_quiz', quiz_id=quiz.id)
+    else:
+        question_form = QuestionForm()
+
+    return render(request, 'edit_quiz.html', {
+        'quiz': quiz,
+        'questions': questions,
+        'question_form': question_form
+    })
+
+
+@login_required
+def add_answers(request, question_id):
+    question = get_object_or_404(Question, id=question_id, quiz__creator=request.user)
+    answers = question.answers.all()
+
+    if request.method == 'POST':
+        answer_form = AnswerForm(request.POST)
+        if answer_form.is_valid():
+            answer = answer_form.save(commit=False)
+            answer.question = question
+            answer.save()
+            return redirect('add_answers', question_id=question.id)
+    else:
+        answer_form = AnswerForm()
+
+    return render(request, 'add_answers.html', {
+        'question': question,
+        'answers': answers,
+        'answer_form': answer_form
+    })
+
+
+@login_required
+def stats_view(request, conference_id):
+    conference = get_object_or_404(Conference, id=conference_id)
+    if request.user not in conference.admins.all():
+        return render(request, 'error.html', {'message': 'You are not an admin of this conference.'})
+
+    quizzes = conference.quizzes.all()
+
+    return render(request, 'stats.html', {'quizzes': quizzes})
