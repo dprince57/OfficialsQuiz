@@ -1,22 +1,18 @@
-{% extends "base.html" %}
-
-{% block title %}Edit Quiz{% endblock title %}
-
-{% block content %}
 <h1>Edit Quiz: {{ quiz.title }}</h1>
-<form method="post">
-    {% csrf_token %}
-    {{ question_form.as_p }}
-    <button type="submit" class="btn btn-primary">Add Question</button>
-</form>
 
 <h2>Questions</h2>
 <ul>
     {% for question in questions %}
-    <li>
-        {{ question.text }}
-        <a href="{% url 'add_answers' question.id %}" class="btn btn-secondary btn-sm">Add Answers</a>
-    </li>
+    <li>{{ question.text }}</li>
     {% endfor %}
 </ul>
-{% endblock content %}
+
+<h2>Add Question</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ question_form.as_p }}
+    <button type="submit">Add Question</button>
+</form>
+
+<a href="{% url 'close_quiz' quiz.id %}">Close Quiz</a> |
+<a href="{% url 'release_quiz_questions' quiz.id %}">Release Questions</a>

@@ -1,6 +1,6 @@
-# quiz_app/forms.py
 from django import forms
-from .models import Answer, QuizPDF
+from django.contrib.auth.models import User
+from .models import (Quiz, Question, Answer, Conference, QuizPDF)
 
 
 class QuizPreferenceForm(forms.Form):
@@ -32,14 +32,10 @@ class QuizPDFForm(forms.ModelForm):
         fields = ['file']
 
 
-from django import forms
-from .models import Quiz, Question, Answer, Conference
-
-
 class QuizForm(forms.ModelForm):
     class Meta:
         model = Quiz
-        fields = ['title', 'publish_time', 'conference']
+        fields = ['title']
 
 
 class QuestionForm(forms.ModelForm):
@@ -55,6 +51,42 @@ class AnswerForm(forms.ModelForm):
 
 
 class ConferenceForm(forms.ModelForm):
+    class Meta:
+        model = Conference
+        fields = ['name', 'logo']
+
+
+class CustomUserChangeForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email']
+        widgets = {
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+        }
+class QuizForm(forms.ModelForm):
+    """
+    Form to create or edit a quiz.
+    """
+    class Meta:
+        model = Quiz
+        fields = ['title']
+
+
+class QuestionForm(forms.ModelForm):
+    """
+    Form to create or edit a question.
+    """
+    class Meta:
+        model = Question
+        fields = ['text']
+
+
+class ConferenceForm(forms.ModelForm):
+    """
+    Form to create or edit a conference.
+    """
     class Meta:
         model = Conference
         fields = ['name', 'logo']

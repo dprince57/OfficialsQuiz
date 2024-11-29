@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Admin Dashboard</h1>
+{% for conference in conferences %}
+<div>
+    <h2>{{ conference.name }}</h2>
+    <a href="#">Add Quiz</a> |
+    <a href="#">Edit Quiz</a> |
+    <a href="#">Add Members</a>
+</div>
+{% endfor %}
+{% endblock %}

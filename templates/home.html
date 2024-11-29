@@ -1,25 +1,54 @@
-<!-- quiz_app/templates/home.html -->
-{% extends 'base.html' %}
-
-{% block title %}Home{% endblock %}
+{% extends "base.html" %}
 
 {% block content %}
-<h1>Welcome, {{ user.username }}</h1>
-<h2>Your Quiz Progress</h2>
+<h1>Welcome, {{ request.user.username }}</h1>
 
-{% if incorrect_answers %}
-    <h3>Incorrect Answers:</h3>
-    <ul>
-        {% for answer in incorrect_answers %}
-            <li>
-                <strong>Question:</strong> {{ answer.question }}<br>
-                <strong>Your Answer:</strong> {{ answer.your_answer }}<br>
-                <strong>Correct Answer:</strong> {{ answer.correct_answer }}<br>
-                <strong>Rule Reference:</strong> {{ answer.rule_reference }}
-            </li>
-        {% endfor %}
-    </ul>
-{% else %}
-    <p>Great work! You have no incorrect answers recorded yet.</p>
+<!-- Superuser Section -->
+{% if is_superuser %}
+<div class="superuser-section">
+    <h2>Superuser Dashboard</h2>
+    <a href="{% url 'manage_conferences' %}">Manage Conferences</a>
+</div>
 {% endif %}
+
+<!-- Conference Admin Section -->
+{% if admin_conferences %}
+<div class="admin-section">
+    <h2>Your Admin Conferences</h2>
+    {% for conference in admin_conferences %}
+    <div class="conference-card">
+        <h3>{{ conference.name }}</h3>
+        <a href="{% url 'add_quiz' conference.id %}">Add Quiz</a> |
+        <a href="{% url 'edit_quiz' conference.id %}">Edit Quiz</a> |
+        <a href="{% url 'add_members' conference.id %}">Add Members</a>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Member Section -->
+{% if member_conferences %}
+<div class="member-section">
+    <h2>Your Member Conferences</h2>
+    {% for conference in member_conferences %}
+    <div class="quiz-box">
+        <h3>{{ conference.name }}</h3>
+        <a href="{% url 'take_quiz' conference.id %}">Take Conference Quiz</a>
+    </div>
+    {% endfor %}
+    <div class="quiz-box">
+        <h3>Random Quiz</h3>
+        <a href="{% url 'take_random_quiz' %}">Take Random Quiz</a>
+    </div>
+</div>
+{% endif %}
+
+<!-- Fallback for Users Without Conferences -->
+{% if not is_superuser and not admin_conferences and not member_conferences %}
+<div class="no-conference-section">
+    <h2>No Conferences Assigned</h2>
+    <p>It seems you are not assigned to any conferences. Please contact an administrator for assistance.</p>
+</div>
+{% endif %}
+
 {% endblock %}

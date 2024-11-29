@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Review Questions</h2>
+<form method="post">
+    {% csrf_token %}
+    <ul>
+        {% for question in inactive_questions %}
+        <li>
+            <label>
+                <input type="checkbox" name="activate" value="{{ question.id }}">
+                {{ question.text }}
+            </label>
+        </li>
+        {% endfor %}
+    </ul>
+    <button type="submit">Activate Selected Questions</button>
+</form>
+{% endblock %}

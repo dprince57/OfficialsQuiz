@@ -1,13 +1,10 @@
-<!-- quiz_app/templates/signup.html -->
-{% extends 'base.html' %}
-
-{% block title %}Sign Up{% endblock %}
+{% extends "base.html" %}
 
 {% block content %}
 <h1>Sign Up</h1>
 <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
-    <button type="submit">Sign Up</button>
+    <button type="submit" class="btn btn-primary">Sign Up</button>
 </form>
 {% endblock %}

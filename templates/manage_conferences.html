@@ -1,0 +1,18 @@
+
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Manage Conferences</h1>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Create Conference</button>
+</form>
+
+<h2>Existing Conferences</h2>
+<ul>
+    {% for conference in conferences %}
+    <li>{{ conference.name }} - Admins: {{ conference.admins.all|join:", " }}</li>
+    {% endfor %}
+</ul>
+{% endblock %}

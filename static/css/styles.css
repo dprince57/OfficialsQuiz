@@ -59,3 +59,18 @@ footer {
     width: 100%;
     font-size: 0.9rem;
 }
+.superuser-section, .admin-section, .member-section, .no-conference-section {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #000000;
+    border-radius: 8px;
+    background-color: #000000;
+}
+
+.conference-card, .quiz-box {
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #000000;
+    border-radius: 5px;
+    background-color: #000000;
+}
