@@ -2,6 +2,9 @@ import logging
 import random
 import pdfplumber
 import re
+
+from django.contrib import messages
+from django.contrib.auth import logout
 from django.contrib.auth.forms import UserCreationForm
 
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -11,6 +14,7 @@ from .forms import *
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from .models import *
+
 logger = logging.getLogger(__name__)
 
 
@@ -81,7 +85,6 @@ def edit_profile(request):
 
 # View for quiz functionality
 @login_required
-@login_required
 def quiz_view(request):
     # Initialize session data for quiz
     if 'quiz_data' not in request.session:
@@ -142,7 +145,6 @@ def quiz_view(request):
     })
 
 
-
 # Submit quiz view
 @login_required
 def submit_quiz(request):
@@ -192,29 +194,6 @@ def create_quiz(request):
         form = QuizForm()
 
     return render(request, 'create_quiz.html', {'form': form})
-
-
-# Edit a quiz
-@login_required
-def edit_quiz(request, quiz_id):
-    quiz = get_object_or_404(Quiz, id=quiz_id)
-    questions = quiz.questions.all()
-
-    if request.method == 'POST':
-        question_form = QuestionForm(request.POST)
-        if question_form.is_valid():
-            question = question_form.save(commit=False)
-            question.quiz = quiz
-            question.save()
-            return redirect('edit_quiz', quiz_id=quiz.id)
-    else:
-        question_form = QuestionForm()
-
-    return render(request, 'edit_quiz.html', {
-        'quiz': quiz,
-        'questions': questions,
-        'question_form': question_form
-    })
 
 
 # Add answers to a question
@@ -281,7 +260,7 @@ def parse_and_save_pdf(file_path):
             parsed_data = extract_questions_and_answers(text)
             for question_text, answers in parsed_data:  # Unpack the tuple here
                 # Save question to database
-                question = GeneralQuestion.objects.create(text=question_text)
+                question = GeneralQuestion.objects.create(text=question_text, is_active=False)
 
                 # Save answers to database
                 for answer in answers:
@@ -339,7 +318,6 @@ def extract_questions_and_answers(text):
         questions.append((current_question.strip(), current_answers))
 
     return questions
-
 
 
 # View for user signup
@@ -483,3 +461,66 @@ def review_questions(request):
     return render(request, 'review_questions.html', {
         'inactive_questions': inactive_questions,
     })
+
+
+@login_required
+def conference_home(request):
+    conferences = request.user.admin_conferences.all()
+    return render(request, 'conference_home.html', {
+        'conferences': conferences,
+    })
+
+
+@login_required
+def conference_create_quiz(request, conference_id):
+    conference = get_object_or_404(Conference, id=conference_id)
+    if request.user not in conference.admins.all():
+        return render(request, 'error.html', {'message': 'You are not authorized to create quizzes for this conference.'})
+
+    if request.method == 'POST':
+        question_text = request.POST.get('question_text')
+        answers = request.POST.getlist('answers')
+        correct_answer = int(request.POST.get('correct_answer'))
+        quiz = Quiz.objects.filter(conference=conference).first()
+
+        if not quiz:
+            quiz = Quiz.objects.create(conference=conference, creator=request.user)
+
+        question = Question.objects.create(quiz=quiz, text=question_text)
+        for index, answer_text in enumerate(answers):
+            Answer.objects.create(
+                question=question,
+                text=answer_text,
+                is_correct=(index == correct_answer),
+            )
+
+        if 'save_publish' in request.POST:
+            quiz.is_published = True
+            quiz.save()
+            return redirect('conference_home')
+        elif 'add_question' in request.POST:
+            return redirect('conference_create_quiz', conference_id=conference_id)
+
+    return render(request, 'create_quiz.html', {'conference': conference})
+
+
+@login_required
+@user_passes_test(lambda u: u.is_superuser or u.is_staff)
+def review_questions(request):
+    inactive_questions = GeneralQuestion.objects.filter(is_active=False)
+
+    if request.method == 'POST':
+        question_ids = request.POST.getlist('activate')
+        GeneralQuestion.objects.filter(id__in=question_ids).update(is_active=True)
+        return redirect('review_questions')
+
+    return render(request, 'review_questions.html', {'inactive_questions': inactive_questions})
+
+
+def logout_view(request):
+    """
+    Logs out the user and redirects to the home page with a confirmation message.
+    """
+    logout(request)
+    messages.success(request, "You have been logged out successfully.")
+    return redirect('home')  # Replace 'home' with the name of your home page view

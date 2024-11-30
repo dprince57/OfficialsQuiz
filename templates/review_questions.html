@@ -1,19 +1,39 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+
+{% block title %}Review Questions{% endblock %}
 
 {% block content %}
 <h2>Review Questions</h2>
+
 <form method="post">
     {% csrf_token %}
-    <ul>
-        {% for question in inactive_questions %}
-        <li>
-            <label>
-                <input type="checkbox" name="activate" value="{{ question.id }}">
-                {{ question.text }}
-            </label>
-        </li>
-        {% endfor %}
-    </ul>
-    <button type="submit">Activate Selected Questions</button>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Select</th>
+                <th>Question</th>
+                <th>Answers</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for question in inactive_questions %}
+            <tr>
+                <td>
+                    <input type="checkbox" name="activate" value="{{ question.id }}">
+                </td>
+                <td>{{ question.text }}</td>
+                <td>
+                    <ul>
+                        {% for answer in question.answers.all %}
+                        <li>{{ answer.text }} ({{ "Correct" if answer.is_correct else "Incorrect" }})</li>
+                        {% endfor %}
+                    </ul>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <button type="submit" class="btn btn-primary">Activate Selected</button>
 </form>
 {% endblock %}

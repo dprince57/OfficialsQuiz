@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Conference Home{% endblock %}
+
+{% block content %}
+<h2>Welcome to Conference Admin</h2>
+<div class="list-group">
+    {% for conference in conferences %}
+    <div class="card mt-3">
+        <div class="card-body">
+            <h5 class="card-title">{{ conference.name }}</h5>
+            <p class="card-text">{{ conference.description }}</p>
+            <a href="{% url 'create_conference_quiz' conference.id %}" class="btn btn-primary">Create/Edit Quizzes</a>
+            <a href="{% url 'manage_members' conference.id %}" class="btn btn-secondary">Manage Members</a>
+            <a href="{% url 'stats_view' conference.id %}" class="btn btn-info">View Stats</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

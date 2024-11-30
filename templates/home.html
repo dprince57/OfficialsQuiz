@@ -1,54 +1,133 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block content %}
-<h1>Welcome, {{ request.user.username }}</h1>
-
-<!-- Superuser Section -->
-{% if is_superuser %}
-<div class="superuser-section">
-    <h2>Superuser Dashboard</h2>
-    <a href="{% url 'manage_conferences' %}">Manage Conferences</a>
-</div>
-{% endif %}
-
-<!-- Conference Admin Section -->
-{% if admin_conferences %}
-<div class="admin-section">
-    <h2>Your Admin Conferences</h2>
-    {% for conference in admin_conferences %}
-    <div class="conference-card">
-        <h3>{{ conference.name }}</h3>
-        <a href="{% url 'add_quiz' conference.id %}">Add Quiz</a> |
-        <a href="{% url 'edit_quiz' conference.id %}">Edit Quiz</a> |
-        <a href="{% url 'add_members' conference.id %}">Add Members</a>
+<div class="container mt-5">
+    <!-- Logo -->
+    <div class="text-center mb-4">
+        <img src="{% static 'images/logo.png' %}" alt="Site Logo" class="img-fluid" style="max-width: 200px;">
     </div>
-    {% endfor %}
-</div>
-{% endif %}
 
-<!-- Member Section -->
-{% if member_conferences %}
-<div class="member-section">
-    <h2>Your Member Conferences</h2>
-    {% for conference in member_conferences %}
-    <div class="quiz-box">
-        <h3>{{ conference.name }}</h3>
-        <a href="{% url 'take_quiz' conference.id %}">Take Conference Quiz</a>
+    <!-- Welcome Section -->
+    {% if user.is_authenticated %}
+    <h1 class="text-center">Welcome, {{ request.user.username }}!</h1>
+    {% else %}
+    <h1 class="text-center">Welcome to the Quiz App!</h1>
+    <p class="text-center">New here? <a href="#" data-bs-toggle="modal" data-bs-target="#registerModal">Create an account</a> or <a href="#" data-bs-toggle="modal" data-bs-target="#loginModal">log in</a>.</p>
+    {% endif %}
+
+    <!-- Superuser Section -->
+    {% if is_superuser %}
+    <div class="superuser-section mt-5">
+        <h2>Superuser Dashboard</h2>
+        <a href="{% url 'manage_conferences' %}" class="btn btn-primary">Manage Conferences</a>
     </div>
-    {% endfor %}
-    <div class="quiz-box">
-        <h3>Random Quiz</h3>
-        <a href="{% url 'take_random_quiz' %}">Take Random Quiz</a>
+    {% endif %}
+
+    <!-- Conference Admin Section -->
+    {% if admin_conferences %}
+    <div class="admin-section mt-5">
+        <h2>Your Admin Conferences</h2>
+        {% for conference in admin_conferences %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h3 class="card-title">{{ conference.name }}</h3>
+                <a href="{% url 'add_quiz' conference.id %}" class="btn btn-secondary">Add Quiz</a>
+                <a href="{% url 'edit_quiz' conference.id %}" class="btn btn-warning">Edit Quiz</a>
+                <a href="{% url 'add_members' conference.id %}" class="btn btn-success">Add Members</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Member Section -->
+    {% if member_conferences %}
+    <div class="member-section mt-5">
+        <h2>Your Member Conferences</h2>
+        {% for conference in member_conferences %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h3 class="card-title">{{ conference.name }}</h3>
+                <a href="{% url 'take_quiz' conference.id %}" class="btn btn-primary">Take Conference Quiz</a>
+            </div>
+        </div>
+        {% endfor %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h3 class="card-title">Random Quiz</h3>
+                <a href="{% url 'take_random_quiz' %}" class="btn btn-info">Take Random Quiz</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Fallback for Users Without Conferences -->
+    {% if not is_superuser and not admin_conferences and not member_conferences %}
+    <div class="no-conference-section mt-5">
+        <h2 class="text-center">No Conferences Assigned</h2>
+        <p class="text-center">It seems you are not assigned to any conferences. Please contact an administrator for assistance.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Login Modal -->
+<div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="loginModalLabel">Log In</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="{% url 'login' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Log In</button>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
-{% endif %}
 
-<!-- Fallback for Users Without Conferences -->
-{% if not is_superuser and not admin_conferences and not member_conferences %}
-<div class="no-conference-section">
-    <h2>No Conferences Assigned</h2>
-    <p>It seems you are not assigned to any conferences. Please contact an administrator for assistance.</p>
+<!-- Register Modal -->
+<div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="registerModalLabel">Create Account</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="{% url 'signup' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password1" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password1" name="password1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password2" class="form-label">Confirm Password</label>
+                        <input type="password" class="form-control" id="password2" name="password2" required>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">Create Account</button>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
-{% endif %}
-
 {% endblock %}
